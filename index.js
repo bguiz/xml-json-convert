@@ -74,3 +74,32 @@ function jsonArray2XmlStr(jsonArr) {
     }
     return openTag+tagContents+closeTag;
 }
+
+function xmlStr2JsonArray(xmlStr) {
+    var parser = new DOMParser();
+    var xml = parser.parseFromString(xmlStr, 'application/xml');
+    var jsonArr = xml2jsonArray(xml);
+    return jsonArr;
+}
+
+function jsonArray2Xml(jsonArr) {
+    var xmlStr = jsonArray2XmlStr(jsonArr);
+    var parser = new DOMParser();
+    var xmlDoc = parser.parseFromString(xmlStr, 'application/xml');
+    if (!xmlDoc || !xmlDoc.documentElement) {
+        throw 'Failed to create document';
+    } 
+    if (xmlDoc.documentElement.nodeName === 'parsererror') {
+        throw 'Parse error occurred';
+    }
+    if (xmlDoc.documentElement.nodeName === 'html' &&
+        xmlDoc.documentElement.childNodes &&
+        xmlDoc.documentElement.childNodes[0] &&
+        xmlDoc.documentElement.childNodes[0].childNodes &&
+        xmlDoc.documentElement.childNodes[0].childNodes[0] &&
+        xmlDoc.documentElement.childNodes[0].childNodes[0].nodeName === 'parsererror'
+        ) {        
+        throw 'Parse error occurred';
+    }
+    return xmlDoc;
+}
