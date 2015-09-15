@@ -1,6 +1,6 @@
 {
   "name": "xml-json-convert",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Convert XML to JSON, convert JSON to XML",
   "main": "index.js",
   "scripts": {
