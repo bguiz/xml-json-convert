@@ -10,7 +10,9 @@
 var
     NAME_KEY = '__name',
     ATTRIBUTES_KEY = '__attrs',
-    TEXT_KEY = '__text';
+    TEXT_KEY = '__text',
+    XMLSTR_NEWLINE = '\n',
+    XMLSTR_INDENT = '  ';
 
 function xml2jsonArray(xmlDoc) {
 
@@ -19,7 +21,7 @@ function xml2jsonArray(xmlDoc) {
     obj[NAME_KEY] = xmlDoc.nodeName;
 
     // allow loose comparion because sometimes value is '1' instead of 1
-    if (xmlDoc.nodeType == 3) { 
+    if (xmlDoc.nodeType == 3) {
         // text
         obj[TEXT_KEY] = xmlDoc.nodeValue;
     }
@@ -45,12 +47,24 @@ function xml2jsonArray(xmlDoc) {
     return obj;
 }
 
-function jsonArray2XmlStr(jsonArr) {
+function jsonArray2XmlStr(jsonArr, indent) {
     var name = jsonArr[NAME_KEY];
     var attrs = jsonArr[ATTRIBUTES_KEY];
     var text = jsonArr[TEXT_KEY];
+    var useIndent, useTagIndent, useChildIndent;
+    if (typeof indent === 'undefined') {
+        useIndent = '';
+        useTagIndent = '';
+        useChildIndent = '';
+    }
+    else {
+        useIndent = indent;
+        useTagIndent = XMLSTR_NEWLINE+useIndent;
+        useChildIndent = indent+XMLSTR_INDENT
+    }
+
     if (name === '#text') {
-        return text; 
+        return text;
     }
     var openTag;
     var closeTag;
@@ -59,18 +73,18 @@ function jsonArray2XmlStr(jsonArr) {
         closeTag = '';
     }
     else {
-        openTag = '<'+name;
+        openTag = useTagIndent+'<'+name;
         for (var attrName in attrs) {
             openTag = openTag+' '+attrName+'="'+attrs[attrName]+'"';
         }
         openTag = openTag+'>';
-        closeTag = '</'+name+'>';
-    }    
+        closeTag = useTagIndent+'</'+name+'>';
+    }
     var tagContents = '';
     for (var i = 0; i < jsonArr.length; ++i) {
         // recursively, for child nodes
         var childJsonArr = jsonArr[i];
-        tagContents = tagContents + jsonArray2XmlStr(childJsonArr);
+        tagContents = tagContents + jsonArray2XmlStr(childJsonArr, useChildIndent);
     }
     return openTag+tagContents+closeTag;
 }
@@ -86,20 +100,6 @@ function jsonArray2Xml(jsonArr) {
     var xmlStr = jsonArray2XmlStr(jsonArr);
     var parser = new DOMParser();
     var xmlDoc = parser.parseFromString(xmlStr, 'application/xml');
-    if (!xmlDoc || !xmlDoc.documentElement) {
-        throw 'Failed to create document';
-    } 
-    if (xmlDoc.documentElement.nodeName === 'parsererror') {
-        throw 'Parse error occurred';
-    }
-    if (xmlDoc.documentElement.nodeName === 'html' &&
-        xmlDoc.documentElement.childNodes &&
-        xmlDoc.documentElement.childNodes[0] &&
-        xmlDoc.documentElement.childNodes[0].childNodes &&
-        xmlDoc.documentElement.childNodes[0].childNodes[0] &&
-        xmlDoc.documentElement.childNodes[0].childNodes[0].nodeName === 'parsererror'
-        ) {        
-        throw 'Parse error occurred';
-    }
+    // do not attempt to detect parsererror - there are too many different ways it can happen
     return xmlDoc;
 }
